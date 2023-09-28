@@ -1,4 +1,4 @@
-# CRUD_products-backend
+# CRUD_products-backend-prisma
 
 You can find the frontend repository [Here](https://github.com/GabSilv219/CRUD_products-Frontend/tree/master)
 > Status: Done ✅
@@ -9,7 +9,7 @@ You can find the frontend repository [Here](https://github.com/GabSilv219/CRUD_p
 * [Nodemon](https://www.npmjs.com/package/nodemon)
 * [Typescript](https://www.typescriptlang.org/)
 * [Prisma](https://www.prisma.io/docs/getting-started/)
-* [MySQL](https://www.mysql.com/)
+* [Prostgres](https://www.postgresql.org/)
 * [Cors](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/CORS)
 
 ## Table and Entities

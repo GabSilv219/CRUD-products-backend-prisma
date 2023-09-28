@@ -8,96 +8,124 @@ You can find the frontend repository [Here](https://github.com/GabSilv219/CRUD_p
 * [Express](https://expressjs.com/pt-br/)
 * [Nodemon](https://www.npmjs.com/package/nodemon)
 * [Typescript](https://www.typescriptlang.org/)
-* [Sequelize](https://sequelize.org/docs/v6/getting-started/)
+* [Prisma](https://www.prisma.io/docs/getting-started/)
 * [MySQL](https://www.mysql.com/)
 * [Cors](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/CORS)
 
 ## Table and Entities
 ### Products
 ```
-id: INTEGER
-name: STRING,
-description: STRING,
-price: DOUBLE,
-stock: INTEGER
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String
+  price       Decimal
+  stock       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 ```
 
 ## CRUD Methods
 ### Get all products
 ~~~
-export const getProducts = async (req: Request, res: Response) => {
-  try {
-    const listProducts = await Product.findAll();
-    return res.status(200).json(listProducts);
-  } catch (error) {
-    return res.status(400).json({message: "No Products Founded!"});
-  }
-}
+  async getAllProducts(req: Request, res: Response) {
+    try {
+      const product = await prismaClient.product.findMany();
+      return res.status(200).json(product);
+    } catch (error) {
+      return res.status(400).json({error: "No Products Founded!"})
+    }
+  },
 ~~~
 ### Post
 ~~~
-export const postProduct = async (req: Request, res: Response) => {
-  const { body } = req;
-  try {
-      const product = await Product.create(body);
-      res.status(200).json({product, message: 'Product Added Successfully!'});
-  } catch (error) {
-    console.log(error);
-    res.status(400).json({error});
-  }
-}
+  async createProduct(req: Request, res: Response) {
+    try {
+      const { name, description, price, stock } = req.body;
+
+      let product = await prismaClient.product.findUnique({where: { name }});
+      
+      if(product){
+        return res.status(401).json({error: "Already exists a product with this name"})
+      }
+
+      product = await prismaClient.product.create({
+        data: {
+          name,
+          description,
+          price,
+          stock
+        },
+      });
+  
+      return res.status(200).json({product, message: "Product created successfully!"});
+    } catch (error) {
+      return res.status(400).json({error: "Error trying to create product!"})
+    }
+  },
 ~~~
 ### Update
 ~~~
-export const updateProduct = async (req: Request, res: Response) => {
-  const { body } = req;
-  const { id } = req.params;
+  async updateProduct(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { name, description, price, stock } = req.body;
 
-  try {
-    const product = await Product.findByPk(id);
-    if(product) {
-      await product.update(body);
-      res.status(200).json({message: 'Product Updated Successfully!'})
-    } else {
-      res.status(401).json({message: `Product ${id} Not Founded}`})
+      let product = await prismaClient.product.findUnique({where: { id: Number(id) }});
+      
+      if(!product){
+        return res.status(401).json({error: "Product Not Found!"});
+      }
+
+      product = await prismaClient.product.update({
+        where: {id: Number(id)},
+        data: {
+          name,
+          description,
+          price,
+          stock
+        },
+      });
+  
+      return res.status(200).json({product, message: "Product updated successfully!"});
+    } catch (error) {
+      return res.status(400).json({error: "Error trying to update product!"})
     }
-  } catch (error) {
-      console.log(error);
-      return res.status(400).json({error});
-  } 
-}
+  },
 ~~~
 ### Delete
 ~~~
-export const deleteProduct = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    const product = await Product.findByPk(id);
+  async deleteProduct(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
 
-    if(product) {
-      await product.destroy();
-      res.status(200).json({message: 'Product Deleted Successfully!'})
-    } else {
-      res.status(401).json({message: `Product ${id} Not Founded}`})
-    } 
-  } catch (error) {
-    return res.status(400).json({error});
-  }
-}
+      let product = await prismaClient.product.findUnique({where: { id: Number(id) }});
+      
+      if(!product){
+        return res.status(401).json({error: "Product Not Found!"});
+      }
+
+      product = await prismaClient.product.delete({where: {id: Number(id)}});
+      return res.status(200).json({product, message: "Product deleted successfully!"});
+
+    } catch (error) {
+      return res.status(400).json({error: "Error trying to delete product!"})
+    }
+  },
 ~~~
 
 ## Routes
 ~~~
-import { Router } from 'express';
-import { deleteProduct, getProduct, getProducts, postProduct, updateProduct } from './controllers/ProductsController';
+import { Router } from "express";
+import ProductController from "./controllers/ProductController";
 
 const router = Router();
 
-router.get('/', getProducts);
-router.get('/:id', getProduct);
-router.delete('/:id', deleteProduct);
-router.post('/', postProduct);
-router.put('/:id', updateProduct);
+router.get("/products", ProductController.getAllProducts);  
+router.get("/product/:id", ProductController.getProduct);  
+router.post("/create-product", ProductController.createProduct);  
+router.put("/update-product/:id", ProductController.updateProduct);  
+router.delete("/delete-product/:id", ProductController.deleteProduct);  
 
-export default router
+export { router };
 ~~~
